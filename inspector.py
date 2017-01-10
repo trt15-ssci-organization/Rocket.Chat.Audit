@@ -85,7 +85,6 @@ class Inspector(object):
 
     def list_logs(self, timestring, keyword=None, fromUser=None, toUser=None, room_name=None):
         query = self._build_logs_query(timestring, keyword, fromUser, toUser, room_name)
-        print "Query: %s" % query
         return self.messages.find(query)
 
     def _timestring_to_query(self, timestring):
