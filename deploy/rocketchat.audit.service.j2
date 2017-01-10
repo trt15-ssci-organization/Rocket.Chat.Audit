@@ -1,0 +1,9 @@
+#!/bin/sh
+
+[Unit]
+Description=Start the Rocket.Chat.Audit service
+
+[Service]
+User={{ user }}
+Group={{ group }}
+ExecStart=/bin/sh -ec "exec /usr/bin/python {{ deploy_dir }}/rocketchat.audit.py {% if service_verbosity > 0 %}-{% for n in range(service_verbosity) %}v{% endfor %}{% endif %} {% if rocketchat_db_host is defined %}--host={{ rocketchat_db_host }}{% endif %}"
