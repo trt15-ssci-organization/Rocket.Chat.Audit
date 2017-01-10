@@ -18,31 +18,56 @@
     with_items:
     - python-setuptools
     - python-pip
+		when: ansible_os_family == "Debian"
+
+  - name: "Install python dependencies"
+    yum: name={{ item }} state=present
+    with_items:
+    - python-setuptools
+    - python-pip
+		when: ansible_os_family == "RedHat"
 
   - name: "Copy rocketchat.audit dependencies"
     copy: src=../requirements.txt dest=/tmp/requirements.txt
+
   - name: "Install rocketchat.audit dependencies"
     pip: requirements=/tmp/requirements.txt state=present
 
   - name: "Deploy rocketchat.audit service"
     copy: src=../rocketchat.audit.py dest={{ deploy_dir }}/rocketchat.audit.py owner={{ user }} group={{ group }} mode=0755
-    notify:
-    - restart rocketchat.audit cron
-  - name: "Deploy rocketchat.audit upstart"
-    template: src=rocketchat.audit.conf.j2 dest=/etc/init/rocketchat.audit.conf
 
   - name: "Deploy rocketchat.audit inspector"
     copy: src=../inspector.py dest={{ deploy_dir }}/inspector.py owner={{ user }} group={{ group }} mode=0755
+
+  - name: "Deploy rocketchat.audit systemd"
+    template: src=rocketchat.audit.service.j2 dest=/etc/systemd/system/rocketchat.audit.service
+    notify:
+      - restart rocketchat.audit (RedHat)
+		when: ansible_os_family == "RedHat"
+
+	- name: "Deploy rocketchat.audit upstart"
+    template: src=rocketchat.audit.conf.j2 dest=/etc/init/rocketchat.audit.conf
+    notify:
+      - restart rocketchat.audit (Debian)
+		when: ansible_os_family == "Debian"
+
   - name: "Configure rocketchat.audit crontab"
     cron: name=rocketchat.audit user={{ user }}
           minute={{ crontab.split(' ')[0] }} hour={{ crontab.split(' ')[1] }}
           day={{ crontab.split(' ')[2] }} month={{ crontab.split(' ')[3] }}
           weekday={{ crontab.split(' ')[4] }}
-          job="{{ deploy_dir }}/inspector.py {% if cron_verbosity > 0 %}-{% for n in range(cron_verbosity) %}v{% endfor %}{% endif %} --time=-24h --from={{ from_email }} email {{ audit_email }} &> {{ log_dir }}/cron.log"
+          job="{{ deploy_dir }}/inspector.py {% if cron_verbosity > 0 %}-{% for n in range(cron_verbosity) %}v{% endfor %}{% endif %} {% if rocketchat_db_host is defined %}--host={{ rocketchat_db_host }}{% endif %} --time=-24h --from={{ from_email }} email {{ audit_email }} &> {{ log_dir }}/cron.log"
 
   - name: "Configure rocketchat.audit sudoers"
     template: src=rocketchat.audit.sudoers.j2 dest=/etc/sudoers.d/rocketchat-audit owner=root group=root mode=0440
 
   handlers:
-  - name: restart rocketchat.audit
+  - name: restart rocketchat.audit (Debian)
     service: name=rocketchat.audit state=restarted
+
+  - name: restart rocketchat.audit (RedHat)
+    systemd: state=restarted name=rocketchat.audit daemon_reload=yes
+
+  environment:
+    http_proxy: http://oab:oab15@proxy.trt15.jus.br:3128
+    https_proxy: http://oab:oab15@proxy.trt15.jus.br:3128
