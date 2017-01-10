@@ -18,14 +18,14 @@
     with_items:
     - python-setuptools
     - python-pip
-		when: ansible_os_family == "Debian"
+    when: ansible_os_family == "Debian"
 
   - name: "Install python dependencies"
     yum: name={{ item }} state=present
     with_items:
     - python-setuptools
     - python-pip
-		when: ansible_os_family == "RedHat"
+    when: ansible_os_family == "RedHat"
 
   - name: "Copy rocketchat.audit dependencies"
     copy: src=../requirements.txt dest=/tmp/requirements.txt
@@ -43,13 +43,13 @@
     template: src=rocketchat.audit.service.j2 dest=/etc/systemd/system/rocketchat.audit.service
     notify:
       - restart rocketchat.audit (RedHat)
-		when: ansible_os_family == "RedHat"
+    when: ansible_os_family == "RedHat"
 
-	- name: "Deploy rocketchat.audit upstart"
+  - name: "Deploy rocketchat.audit upstart"
     template: src=rocketchat.audit.conf.j2 dest=/etc/init/rocketchat.audit.conf
     notify:
       - restart rocketchat.audit (Debian)
-		when: ansible_os_family == "Debian"
+    when: ansible_os_family == "Debian"
 
   - name: "Configure rocketchat.audit crontab"
     cron: name=rocketchat.audit user={{ user }}
