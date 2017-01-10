@@ -4,12 +4,16 @@ env: "development"
 
 # rocketchat.audit parameters
 service_verbosity: 0
+file_store: "/var/lib/rocket.chat/uploads"
+audit_dir: "/var/lib/rocket.chat/audit"
+file_archive: "/var/lib/rocket.chat/audit.archive"
 
 # cron job parameters
 audit_email: "audit@example.com"
 from_email: "rocketchat@example.com"
 crontab: "55 23 * * *"
 cron_verbosity: 2
+rocketchat_db_host: "mongodbserver.domain.com"
 
 # deployment parameters
 deploy_dir: "/usr/local/bin/rocketchat.audit"
